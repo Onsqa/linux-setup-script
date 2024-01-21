@@ -6,15 +6,12 @@ read -p "Please enter your public key: " pub_key
 # Ask user if they want to disable password authentication and root login
 read -p "Do you want to disable password authentication and root login? (yes/no): " answer
 if [ "$answer" = "yes" ]; then
-    # Disable password authentication
     sudo sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config
-    # Disable root login
-
     sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
-    # Restart ssh service
-    sudo service ssh restart
-    # Append public key to the authorized_keys file
     echo "$pub_key" >> ~/.ssh/authorized_keys
+    sudo service ssh restart
+    else
+        echo "Skipping SSH configs"
 fi
 
 read -p "Do you want to update and upgrade system packages? (yes/no): " answer
@@ -22,6 +19,8 @@ if [ "$answer" = "yes" ]; then
     sudo apt-get update -y 
     sudo apt-get upgrade -y
     echo "System packages updated and upgraded."
+    else
+        echo "System packages not updated or upgraded."
 fi
 
 read -p "Do you want to install nginx, php 8.1, certbot?" answer
@@ -69,6 +68,8 @@ if [ "$answer" = "yes" ]; then
 
     # Nginx to systemctl
     sudo systemctl enable nginx
+    else
+        echo "Skipping installing nginx, php 8.1, certbot"
 fi
 
 read -p "Do you want to install docker, docker-compose and add current user to docker group? (yes/no): " answer
@@ -99,6 +100,8 @@ if [ "$answer" = "yes" ]; then
     # User to docker group
     sudo usermod -aG docker $USER
     echo "User added to Docker group."
+    else
+        echo "Skipping installing Docker and Docker-Compose"
 fi
 
 read -p "Do you want to edit php limits? (yes/no): " answer
@@ -110,6 +113,8 @@ if [ "$answer" = "yes" ]; then
     # Restart PHP-FPM service
     sudo service php8.1-fpm restart
     echo "PHP limits edited and PHP restarated."
+    else
+        echo "PHP limits not edited."
 fi
 
 read -p "Do you want to add current user to www-data group? (yes/no): " answer
@@ -123,6 +128,8 @@ if [ "$answer" = "yes" ]; then
     # Set the setgid bit on /var/www so all new files are created with the www-data group
     sudo chmod -R g+s /var/www
     echo "Setgid bit set on /var/www."
+    else
+        echo "Skipping www-data group config"
 fi
 
 read -p "Do you want to configure firewall rules? (yes/no): " answer
@@ -132,6 +139,8 @@ if [ "$answer" = "yes" ]; then
     sudo ufw allow 'Nginx Full'
     sudo ufw allow OpenSSH
     echo "Firewall configured successfully"
+    else
+        echo "Skipping firewall configuration"
 fi
 
 read -p "Do you want to install mariadb? (yes/no): " answer
@@ -140,6 +149,8 @@ if [ "$answer" = "yes" ]; then
     sudo apt-get install mariadb-server -y
     sudo systemctl enable mariadb
     sudo mysql_secure_installation
+    else
+        echo "Skipping mariadb install"
 fi
 
 read -p "Do you want to install small utility packages? (yes/no): " answer
@@ -149,12 +160,15 @@ if [ "$answer" = "yes" ]; then
     sudo apt-get install -y htop
     sudo apt-get install -y curl
     sudo apt-get install -y speedtest-cli
+    else 
+    echo "Skipping small utility packages"
 fi
 
 read -p "Do you want to optimize system packages? (yes/no): " answer
 if [ "$answer" = "yes" ]; then
-    # Optimize system packages
     sudo apt-get autoremove -y
     sudo apt-get autoclean -y
-    # optimize apt sources to select best mirror
+    else
+    echo "Skipping optimization"
 fi
+#wget -O setup.sh https://raw.githubusercontent.com/Onsqa/linux-setup-script/main/server-setup.sh && chmod +x server-setup.sh && ./server-setup.sh
