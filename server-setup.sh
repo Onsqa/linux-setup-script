@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Ask user to enter their public key
-read -p "Please enter your public key: " pub_key
 
 # Ask user if they want to disable password authentication and root login
 read -p "Do you want to disable password authentication and root login? (yes/no): " answer
 if [ "$answer" = "yes" ]; then
+read -p "Please enter your public key: " pub_key
     sudo sed -i 's/PasswordAuthentication yes/PasswordAuthentication no/g' /etc/ssh/sshd_config
     sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
     echo "$pub_key" >> ~/.ssh/authorized_keys
@@ -25,7 +24,24 @@ fi
 
 read -p "Do you want to install nginx, php 8.1, certbot?" answer
 if [ "$answer" = "yes" ]; then
+    # Install Nginx and optimize it
+    # Install Nginx
     sudo apt-get install nginx -y
+
+    # Optimize Nginx
+    sudo bash -c "cat >> /etc/nginx/nginx.conf" <<'EOF'
+worker_processes auto;
+events {
+    worker_connections 1024;
+}
+http {
+    keepalive_timeout 15;
+}
+EOF
+
+    # Test and reload Nginx
+    sudo nginx -t && sudo systemctl reload nginx
+    # Install PHP with addons
     sudo apt-get install software-properties-common -y
     sudo add-apt-repository ppa:ondrej/php
     sudo apt-get update
@@ -132,6 +148,8 @@ if [ "$answer" = "yes" ]; then
         echo "Skipping www-data group config"
 fi
 
+
+
 read -p "Do you want to configure firewall rules? (yes/no): " answer
 if [ "$answer" = "yes" ]; then
     # Configure Firewall
@@ -145,12 +163,38 @@ fi
 
 read -p "Do you want to install mariadb? (yes/no): " answer
 if [ "$answer" = "yes" ]; then
+    read -sp "Enter the root password for MariaDB: " root_password
     # Install MariaDB
     sudo apt-get install mariadb-server -y
     sudo systemctl enable mariadb
-    sudo mysql_secure_installation
-    else
-        echo "Skipping mariadb install"
+
+    sudo mysql -e "UPDATE mysql.user SET Password = PASSWORD('$root_password') WHERE User = 'root'"
+    sudo mysql -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1')"
+    sudo mysql -e "DELETE FROM mysql.user WHERE User=''"
+    sudo mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\_%'"
+    sudo mysql -e "FLUSH PRIVILEGES"
+else
+    echo "Skipping mariadb install"
+fi
+
+read -p "Do you want to optimize MariaDB? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    sudo bash -c "cat >> /etc/mysql/mariadb.conf.d/50-server.cnf" <<'EOF'
+[mysqld]
+# Set buffer pool size to 50-80% of your computer's memory
+innodb_buffer_pool_size=2048M
+# Set the log file size to about 25% of the buffer pool size
+innodb_log_file_size=512M
+# Other settings
+innodb_flush_log_at_trx_commit=1
+innodb_flush_method=O_DIRECT
+innodb_log_buffer_size=64M
+query_cache_size=64M
+query_cache_type=1
+EOF
+    sudo systemctl restart mariadb
+else
+    echo "Skipping MariaDB optimization"
 fi
 
 read -p "Do you want to install small utility packages? (yes/no): " answer
@@ -164,11 +208,29 @@ if [ "$answer" = "yes" ]; then
     echo "Skipping small utility packages"
 fi
 
-read -p "Do you want to optimize system packages? (yes/no): " answer
+read -p "Do you want to optimize system? (yes/no): " answer
 if [ "$answer" = "yes" ]; then
     sudo apt-get autoremove -y
     sudo apt-get autoclean -y
+    echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
     else
     echo "Skipping optimization"
+fi
+read -p "Do you want to change server name? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    read -p "Enter the new server name: " new_hostname
+    sudo hostnamectl set-hostname $new_hostname
+    echo "Server name changed to $new_hostname."
+else
+    echo "Skipping server name change."
+fi
+
+read -p "Do you want to change server timezone? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    read -p "Enter the new timezone (e.g., 'America/Los_Angeles'): " new_timezone
+    sudo timedatectl set-timezone $new_timezone
+    echo "Server timezone changed to $new_timezone."
+else
+    echo "Skipping server timezone change."
 fi
 #wget -O setup.sh https://raw.githubusercontent.com/Onsqa/linux-setup-script/main/server-setup.sh && chmod +x server-setup.sh && ./server-setup.sh
