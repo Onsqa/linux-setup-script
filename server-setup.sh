@@ -5,30 +5,6 @@ if [ "$EUID" -ne 0 ]
 fi
 
 shopt -s nocasematch
-ask_and_run() {
-    read -p "$1 (yes/no): " answer
-    if [[ "$answer" = "yes" ]] || [[ "$answer" = "y" ]]; then
-        shift
-        "${@}"
-    else
-        echo "Skipataan $1"
-    fi
-}
-
-ask_and_run "Haluatko disable password authentication ja root login?" disable_ssh_password_auth
-ask_and_run "Haluatko update ja upgrade järjestelmä tiedostot?" update_system_packages
-ask_and_run "Haluatko asentaa nginx, php 8.1, certbot?" install_nginx_php_certbot
-ask_and_run "Haluatko asentaa docker ja docker compose?" install_docker
-ask_and_run "Haluatko päivittää php limittejä?" update_php_limits
-ask_and_run "Haluatko lisätä käyttäjän www data ryhmään?" add_user_to_wwwdata
-ask_and_run "Haluatko aktivoida palomuurin" update_firewall
-ask_and_run "Haluatko asentaa MariaDB?" install_mariadb
-ask_and_run "Haluatko asentaa pikku ohjelmistoja mm speedtest, htop?" instalL_small_packages
-ask_and_run "Haluatko automatically clean files and config swappiness?" auto_clean_swappiness
-ask_and_run "Haluatko vaihtaa aikavyöhykkeen Helsinkiin?" change_timezone
-ask_and_run "Haluatko vaihtaa palvelimen nimen?" change_hostname
-ask_and_run "Haluatko käynnistää palvelimen uudelleen?" reboot
-
 
 disable_ssh_password_auth() {
     # Disable password authentication
@@ -152,5 +128,97 @@ reboot() {
     shutdown -r now
     echo "Server rebooted."
 }
+
+read -p "Haluatko disabloida password authentication ja root kirjautumisen? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    disable_ssh_password_auth
+    else
+    echo "Skipataan password authentication ja root kirjautumisen."
+fi
+
+read -p "Haluatko päivittää järjestelmä ja sen paketit (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    update_system_packages
+    else
+    echo "Skipataan paketit päivittäminen."
+fi
+
+read -p "Haluatko asentaa nginx, php 8.1, certbot? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    all_nginx_php_certbot
+    else
+    echo "Skipataan nginx, php 8.1, certbot."
+fi
+
+read -p "Haluatko asentaa docker ja docker compose? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    install_docker
+    else
+    echo "Docker not installed."
+fi
+
+read -p "Haluatko päivittää php limittejä? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    update_php_limits
+    else
+    echo "Skipataan php limitit"
+fi
+
+read -p "Haluatko lisätä käyttäjän www data ryhmään? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    add_user_to_wwwdata
+    else
+    echo "Ei lisätä käyttäjää"
+fi
+
+read -p "Haluatko aktivoida palomuurin (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    update_firewall
+    else
+    echo "Skipataan palomuuri"
+fi
+
+read -p "Do you want to install MariaDB? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    install_mariadb
+    else
+    echo "Skipataan mariadb"
+fi
+
+read -p "Haluatko asentaa pikku ohjelmistoja mm speedtest, htop? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    instalL_small_packages
+    else 
+    echo "Skipping pikku softat"
+fi
+
+read -p "Haluatko automatically clean files and config swappiness? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    auto_clean_swappiness
+    else
+    echo "Swappiness not changed."
+fi
+
+read -p "Haluatko vaihtaa aikavyöhykkeen Helsinkiin? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    change_timezone
+    else 
+    echo "Skipping timezone change"
+fi
+
+read -p "Haluatko vaihtaa palvelimen nimen? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    change_hostname
+    else
+    echo "Skipping hostname change"
+fi
+
+read -p "Haluatko käynnistää palvleimen uudelleen? (yes/no): " answer
+if [ "$answer" = "yes" ]; then
+    reboot
+    else
+    echo "Skipping reboot"
+fi
+
 shopt -u nocasematch
 #wget -O setup.sh https://raw.githubusercontent.com/Onsqa/linux-setup-script/main/server-setup.sh && chmod +x setup.sh && sudo ./setup.sh
