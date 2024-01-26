@@ -46,17 +46,23 @@ update_system_packages() {
     yes |  apt-get upgrade 
 }
 
-install_nginx_php_certbot() {
+all_nginx_php_certbot() {
+    read -p "Enter the PHP version you want to install (e.g., 8.1): " php_version
     yes |  apt-get install -y nginx software-properties-common
+    yes | sudo apt install python3 python3-venv libaugeas0
+    yes |  sudo python3 -m venv /opt/certbot/
+    yes | sudo /opt/certbot/bin/pip install --upgrade pip
+    yes | sudo /opt/certbot/bin/pip install certbot certbot-nginx
+    yes | sudo ln -s /opt/certbot/bin/certbot /usr/bin/certbot
     yes |  add-apt-repository ppa:ondrej/php
     yes |  apt-get update
-    yes | apt-get install -y php8.1-fpm php8.1-mysql php8.1-curl php8.1-gd php8.1-mbstring \
-            php8.1-xml php8.1-xmlrpc php8.1-zip php8.1-soap php8.1-intl \
-            php8.1-bcmath php8.1-cli php8.1-dev php8.1-common php8.1-json \
-            php8.1-opcache php8.1-readline php8.1-imap php8.1-imagick \
-            php8.1-redis php8.1-sqlite3 php8.1-xdebug php8.1-xmlreader \
-            php8.1-xmlwriter php8.1-zmq php8.1-ldap php8.1-pgsql php8.1-pdo \
-            php8.1-pdo-mysql php8.1-pdo-pgsql php8.1-pdo-sqlite
+    yes | apt-get install -y php${php_version}-fpm php${php_version}-mysql php${php_version}-curl php${php_version}-gd php${php_version}-mbstring \
+            php${php_version}-xml php${php_version}-xmlrpc php${php_version}-zip php${php_version}-soap php${php_version}-intl \
+            php${php_version}-bcmath php${php_version}-cli php${php_version}-dev php${php_version}-common php${php_version}-json \
+            php${php_version}-opcache php${php_version}-readline php${php_version}-imap php${php_version}-imagick \
+            php${php_version}-redis php${php_version}-sqlite3 php${php_version}-xdebug php${php_version}-xmlreader \
+            php${php_version}-xmlwriter php${php_version}-zmq php${php_version}-ldap php${php_version}-pgsql php${php_version}-pdo \
+            php${php_version}-pdo-mysql php${php_version}-pdo-pgsql php${php_version}-pdo-sqlite
 }
 
 install_docker() {
@@ -147,3 +153,4 @@ reboot() {
     echo "Server rebooted."
 }
 shopt -u nocasematch
+#wget -O setup.sh https://raw.githubusercontent.com/Onsqa/linux-setup-script/main/server-setup.sh && chmod +x setup.sh && sudo ./setup.sh
